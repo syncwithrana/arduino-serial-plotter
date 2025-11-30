@@ -32,6 +32,24 @@ rx_plot.setYRange(0, 255)
 rx_curve = rx_plot.plot(pen='y')
 rx_data = []
 
+
+def process_serial_line(line):
+    """Process a line of serial data and return the value if valid."""
+    global tx_data, rx_data
+    try:
+        if line.startswith("Master TX:"):
+            v = int(line.split(":")[1].strip())
+            tx_data.append(v)
+            tx_data = tx_data[-WINDOW:]
+        elif line.startswith("Slave RX:"):
+            v = int(line.split(":")[1].strip())
+            rx_data.append(v)
+            rx_data = rx_data[-WINDOW:]
+        
+    except:
+        pass
+    return None, None
+
 # ----- Update Loop -----
 def update():
     global tx_data, rx_data
@@ -39,24 +57,12 @@ def update():
     # -------- USB0: Master TX --------
     if ser1.in_waiting:
         line1 = ser1.readline().decode(errors="ignore").strip()
-        if line1.startswith("Master TX:"):
-            try:
-                v = int(line1.split(":")[1].strip())
-                tx_data.append(v)
-                tx_data = tx_data[-WINDOW:]
-            except:
-                pass
+        process_serial_line(line1)
 
     # -------- USB1: Slave RX --------
     if ser2.in_waiting:
         line2 = ser2.readline().decode(errors="ignore").strip()
-        if line2.startswith("Slave RX:"):
-            try:
-                v = int(line2.split(":")[1].strip())
-                rx_data.append(v)
-                rx_data = rx_data[-WINDOW:]
-            except:
-                pass
+        process_serial_line(line2)
 
     # Update curves
     tx_curve.setData(tx_data)
